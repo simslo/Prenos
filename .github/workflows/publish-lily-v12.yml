@@ -1,0 +1,94 @@
+name: Publish LILY V12
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download verified prebuilt artifacts
+        env:
+          FW_URL: 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-a490-81f4-87fc-226ff5be7e96/raw?se=2026-09-03T15%3A23%3A11Z&sp=r&sv=2026-02-06&sr=b&scid=d8656391-49af-59ce-997a-a6bc1ddf52a0&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T22%3A22%3A34Z&ske=2026-09-03T22%3A22%3A34Z&sks=b&skv=2026-02-06&sig=AIdWDLHjjbAsyV5HPf0Bt2GCT69%2BUBA2TX/LCU87s6A%3D'
+          APP_URL: 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-4ed0-8210-b73e-978c3a0bb115/raw?se=2026-09-03T15%3A23%3A15Z&sp=r&sv=2026-02-06&sr=b&scid=64cbfe5e-4d98-5283-a818-eebd3dcd4fa9&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-03T05%3A48%3A56Z&ske=2026-09-04T05%3A48%3A56Z&sks=b&skv=2026-02-06&sig=DRZjcud0Ljdli/tyHf2DacYtarOxMlL3SBk84rGamrM%3D'
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 "$FW_URL" -o firmware_artifact.zip
+          curl --fail --location --retry 3 "$APP_URL" -o apk_artifact.zip
+          unzip -q firmware_artifact.zip -d fw
+          unzip -q apk_artifact.zip -d app
+          test -s fw/firmware.bin
+          test -s fw/bootloader.bin
+          test -s fw/partitions.bin
+          test -s app/LILY_Scanner_v1.2.apk
+
+      - name: Assemble LILY V12 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir package
+          cp fw/firmware.bin package/FW.bin
+          cp fw/bootloader.bin package/bootloader.bin
+          cp fw/partitions.bin package/partitions.bin
+          cp app/LILY_Scanner_v1.2.apk package/APP.apk
+          cat > package/UPLOAD_COM6.bat <<'BAT'
+          @echo off
+          setlocal
+          cd /d "%~dp0"
+          set PORT=COM6
+          set PY=python
+          if exist "%USERPROFILE%\.platformio\penv\Scripts\python.exe" set PY=%USERPROFILE%\.platformio\penv\Scripts\python.exe
+          echo ================================================
+          echo LILY Scanner v1.2 - FW UPDATE - %PORT%
+          echo ================================================
+          "%PY%" -m esptool --chip esp32 --port %PORT% --baud 921600 write_flash 0x10000 FW.bin
+          if errorlevel 1 (
+            echo.
+            echo NAPAKA pri nalaganju.
+            pause
+            exit /b 1
+          )
+          echo.
+          echo KONCANO.
+          pause
+          BAT
+          cat > package/README.txt <<'TXT'
+          LILY Scanner v1.2 VERIFIED WATER DEEP
+
+          APP.apk            Android aplikacija v1.2
+          FW.bin             Firmware LILYGO T3 V1.6.1 / SX1276
+          UPLOAD_COM6.bat    Posodobitev firmwarea na COM6
+          bootloader.bin     ESP32 bootloader
+          partitions.bin     Partition tabela
+
+          WiFi: WaterMeter-Scanner
+          Geslo: scanner868
+
+          Scanner uporablja preverjene profile okoli 868.950 MHz:
+          - T1 PRIOR/P2
+          - T1 WMBUS_DIRECT
+          - C1-A hardware DCLK
+
+          Iskanje ni vezano na znane ID-je.
+          TXT
+          (cd package && sha256sum APP.apk FW.bin bootloader.bin partitions.bin > SHA256SUMS.txt)
+          (cd package && zip -q ../LILY_V12.zip APP.apk FW.bin UPLOAD_COM6.bat README.txt SHA256SUMS.txt bootloader.bin partitions.bin)
+          unzip -t LILY_V12.zip
+          sha256sum LILY_V12.zip
+
+      - name: Publish public GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v1.2 --yes --cleanup-tag 2>/dev/null || true
+          gh release create v1.2 LILY_V12.zip \
+            --target "$GITHUB_SHA" \
+            --title 'LILY Scanner v1.2' \
+            --notes 'Javni prenos preverjenega LILY Scanner v1.2 kompleta: Android APK + firmware + COM6 BAT.'
