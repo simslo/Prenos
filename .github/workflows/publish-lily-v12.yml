@@ -17,7 +17,7 @@ jobs:
       - name: Download verified prebuilt artifacts
         env:
           FW_URL: 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-22f0-81f5-a561-1efbe944fc6e/raw?se=2026-09-03T15%3A46%3A20Z&sp=r&sv=2026-02-06&sr=b&scid=22648b8f-f058-5d77-a7b8-1f9d03374324&skoid=38550de5-1fab-49d1-9ebb-83af5557cc43&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-03T15%3A32%3A37Z&ske=2026-09-04T15%3A32%3A37Z&sks=b&skv=2026-02-06&sig=EmczACAZ0clxozMx5qtNMnDKjD0izXsKJkmWeh3yMJM%3D'
-          APP_URL: 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-4ed0-8210-b73e-978c3a0bb115/raw?se=2026-09-03T15%3A23%3A15Z&sp=r&sv=2026-02-06&sr=b&scid=64cbfe5e-4d98-5283-a818-eebd3dcd4fa9&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-03T05%3A48%3A56Z&ske=2026-09-04T05%3A48%3A56Z&sks=b&skv=2026-02-06&sig=DRZjcud0Ljdli/tyHf2DacYtarOxMlL3SBk84rGamrM%3D'
+          APP_URL: 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-8f54-81f5-a2c6-45d9d3b22028/raw?se=2026-09-03T15%3A47%3A14Z&sp=r&sv=2026-02-06&sr=b&scid=d90ac73e-63de-5d3c-bab4-3c9f769e3715&skoid=38550de5-1fab-49d1-9ebb-83af5557cc43&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-03T15%3A28%3A01Z&ske=2026-09-04T15%3A28%3A01Z&sks=b&skv=2026-02-06&sig=PFZb9IyyyWNSzWiZ8%2BqPiSvtQsVPUE3XJKOoFiRC/uY%3D'
         run: |
           set -euo pipefail
           curl --fail --location --retry 3 "$FW_URL" -o firmware_artifact.zip
