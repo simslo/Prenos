@@ -1,3 +1,5 @@
 # Prenos
 
-Zacasni javni repozitorij za prenos LILY Scanner paketa.
+Javni prenos LILY Scanner paketa.
+
+Release: LILY Scanner v1.2
